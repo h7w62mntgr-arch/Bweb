@@ -70,26 +70,31 @@ function animateCounter(el) {
 }
 
 // ── Contact form ──
-const form       = document.getElementById('contactForm');
-const submitBtn  = document.getElementById('submitBtn');
+const form        = document.getElementById('contactForm');
+const submitBtn   = document.getElementById('submitBtn');
 const formSuccess = document.getElementById('formSuccess');
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
 
-  const nombre = form.nombre.value.trim();
-  const email  = form.email.value.trim();
-  if (!nombre || !email) return;
+  const nombre  = form.nombre.value.trim();
+  const empresa = form.empresa.value.trim();
+  const email   = form.email.value.trim();
+
+  if (!nombre || !empresa || !email || !emailRegex.test(email)) return;
 
   submitBtn.disabled = true;
   submitBtn.querySelector('.btn-text').textContent = 'Enviando...';
 
   // Simulate submission (replace with real endpoint)
   setTimeout(() => {
-    form.style.display    = 'none';
+    form.reset();
     formSuccess.classList.add('visible');
-    submitBtn.disabled    = false;
+    submitBtn.disabled = false;
     submitBtn.querySelector('.btn-text').textContent = 'Enviar consulta';
+    setTimeout(() => formSuccess.classList.remove('visible'), 6000);
   }, 1200);
 });
 
