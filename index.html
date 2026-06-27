@@ -163,6 +163,90 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
       window.Babel.transformScriptTags();
     }
+
+    // ── Fluxia: validación del formulario de contacto ──
+    (function () {
+      var emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+      function mkErr(parent) {
+        var e = parent.querySelector('.fx-err');
+        if (!e) {
+          e = document.createElement('span');
+          e.className = 'fx-err';
+          e.style.cssText = 'display:block;color:#FF4D4D;font-size:12px;margin-top:6px;font-weight:500;line-height:1.3;';
+          parent.appendChild(e);
+        }
+        return e;
+      }
+
+      function setErr(inp, msg) {
+        inp.style.borderColor = '#FF4D4D';
+        inp.style.boxShadow   = '0 0 0 3px rgba(255,77,77,.18)';
+        mkErr(inp.parentNode).textContent = msg;
+      }
+
+      function clearErr(inp) {
+        inp.style.borderColor = '';
+        inp.style.boxShadow   = '';
+        var e = inp.parentNode.querySelector('.fx-err');
+        if (e) e.textContent = '';
+      }
+
+      function validate(form) {
+        // inputs order: [0] nombre, [1] empresa, [2] email
+        var ti   = Array.from(form.querySelectorAll('input[type=text],input[type=email]'));
+        var nombre  = ti[0] ? ti[0].value.trim() : '';
+        var empresa = ti[1] ? ti[1].value.trim() : '';
+        var email   = ti[2] ? ti[2].value.trim() : '';
+        var ok = true;
+
+        if (nombre.length < 2) {
+          setErr(ti[0], 'Ingresá tu nombre completo (mínimo 2 caracteres).');
+          ok = false;
+        } else { clearErr(ti[0]); }
+
+        if (empresa.length < 2) {
+          setErr(ti[1], 'Ingresá el nombre de tu empresa o rubro.');
+          ok = false;
+        } else { clearErr(ti[1]); }
+
+        if (!emailRx.test(email)) {
+          setErr(ti[2], 'Ingresá un email válido, ej: nombre@empresa.com');
+          ok = false;
+        } else { clearErr(ti[2]); }
+
+        return ok;
+      }
+
+      function attach(form) {
+        if (form.__fxv) return;
+        form.__fxv = true;
+        // Limpiar error al escribir
+        Array.from(form.querySelectorAll('input, textarea')).forEach(function (inp) {
+          inp.addEventListener('input', function () { clearErr(inp); });
+        });
+        // Interceptar submit en fase capture (antes que el framework)
+        form.addEventListener('submit', function (e) {
+          if (!validate(form)) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+          }
+        }, true);
+      }
+
+      // Observer por si el framework re-renderiza el formulario
+      var obs = new MutationObserver(function () {
+        var f = document.querySelector('form');
+        if (f) attach(f);
+      });
+      if (document.body) {
+        obs.observe(document.body, { childList: true, subtree: true });
+      }
+      // Intentar adjuntar de inmediato (el DOM ya está listo en este punto)
+      var f = document.querySelector('form');
+      if (f) attach(f);
+    })();
+
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
     console.error('Bundle unpack error:', err);
